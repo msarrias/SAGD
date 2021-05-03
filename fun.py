@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import math, random, time, pickle
 import networkx as nx
 
-def avg_simulations_sgd_results(simulations_sgd_dic):
+def avg_graph_dist_simulations_results(simulations_sgd_dic):
     avg_dic = {}
     std_dic = {}
     for key, value in simulations_sgd_dic.items():
@@ -14,7 +14,8 @@ def avg_simulations_sgd_results(simulations_sgd_dic):
         std_dic[key] = [np.std(value[i]) for i in value.keys()]
     return avg_dic, std_dic
 
-def plot_sagd(ref_par_list, par_list, avg_dic, std_dic, save_fig_list, par = 'p' ):
+def plot_avg_graph_dist(ref_par_list, par_list, avg_dic,
+                        std_dic, save_fig_list, par = 'p' , distance = "SAGD"):
     fig = plt.figure(figsize=(20, 4))
     for i in range(len(ref_par_list)):
         par0 = ref_par_list[i]
@@ -26,7 +27,7 @@ def plot_sagd(ref_par_list, par_list, avg_dic, std_dic, save_fig_list, par = 'p'
         else:
             plt.title(r'$k_0$ = ' + str(par0))
             plt.xlabel('k')
-        plt.ylabel('SAGD')
+        plt.ylabel(distance)
         plt.plot(par_list, avg_dic[par0], '-o', color = 'red')
         plt.plot(par_list[np.argmin(avg_dic[par0])], 
                  np.min(avg_dic[par0]), 'x', color = 'blue')

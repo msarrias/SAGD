@@ -24,6 +24,7 @@ class graphs_distance:
         self.W_ref = new_W_ref
         self.ref = new_ref
         self.compute_CTDs_ref()
+        self.compute_asymp_CTDs_ref()
     
     def reset_normalization(self, new_normalization):
         if new_normalization not in ["scale_and_shift", "norm_wrt_volume", "norm_wrt_avg_ctd"]:
@@ -46,6 +47,15 @@ class graphs_distance:
                 C[xj, xi] = C[xi, xj]
         return C
     
+    def compute_asymp_C_matrix(self, D_matrix):
+        N, _ = D_matrix.shape
+        C = np.zeros((N, N))
+        for xi in range(N):
+            for xj in range(xi, N):
+                C[xi, xj] = np.sum(D_matrix) * ((1/ D_matrix[xi, xi]) + (1/ D_matrix[xj, xj]))
+                C[xj, xi] = C[xi, xj]
+        return C
+    
     def solve_and_sort_std_eigenvalue_problem(self, matrix):
         eigv, eigvc = la.eig(matrix)
         sorted_eig =  sorted(zip(eigv.real, eigvc.T), key=lambda x: x[0])
@@ -60,6 +70,31 @@ class graphs_distance:
         if self.verbose:
             print(f'Reference model CTD matrix completed')
             
+    def compute_asymp_CTDs_ref(self):
+        self.D_ref = self.compute_D(self.W_ref)
+        self.Vol_ref = np.sum(self.D_ref)
+        self.C_asymp_ref = self.compute_asymp_C_matrix(self.D_ref)
+        if self.verbose:
+            print(f'Asymptotic rerence model CTD matrix completed')
+            
+    def compute_asymp_CTDs_dic(self):
+        self.C_asymp_dic = {}
+        self.Eval_dic = {}
+        tic = time.time()
+        for parm in self.params_list:
+            C_dic_temp = {}
+            for replicate in range(self.N_replicates):
+                D_temp = self.compute_D(self.W_dic[parm][replicate])
+                C_dic_temp[replicate] = self.compute_asymp_C_matrix(D_temp)
+            self.C_asymp_dic[parm] = C_dic_temp
+            print('||' , end = '')
+        print('')
+        if self.verbose: 
+            tac = time.time()
+            print(f'CTD matrices of the {self.N_replicates * len(self.params_list)}' \
+                  f' models completed. Process took {(tac-tic)/60} minutes')
+            print('')
+                                                   
     def compute_CTDs_dic(self):
         self.C_dic = {}
         self.Eval_dic = {}
@@ -108,32 +143,6 @@ class graphs_distance:
             vj_count += vj_counter.get(sorted_elt, 0)
         return cdf_distance
     
-    def ASD(self, eigv_i, eigv_j):
-        return np.sqrt(np.sum((eigv_i - eigv_j)**2))
-    
-    def compute_ASD(self):
-        tic = time.time()
-        self.rep_ASD = {}
-        self.time = []
-        if self.verbose: 
-            print('Calulating the ASD between:')
-            print(f' G({self.ref}) and G(~), as an average  ' \
-                  f'of the ASD between G({self.ref}) and the {self.N_replicates}')
-        for idx, key in enumerate(self.params_list):
-            tic_ = time.time() 
-            replicate_distance = []
-            for rep in range(self.N_replicates):
-                replicate_distance.append(self.ASD(np.asarray(self.eigvs_ref), np.asarray(self.Eval_dic[key][rep])))
-            self.rep_ASD[key] = replicate_distance
-            tac_ = time.time()
-            time_ = (tac_ - tic_) / 60
-            self.time.append(time_)
-        tac = time.time()
-        if self.verbose:
-            print()
-            print(f'Process took {(tac-tic)/60} minutes') 
-    
-    
     def compute_SAGD(self):
         self.CTDs_ref = list(self.C_ref[np.triu_indices(self.N_ref, k = 1)])
         self.NormCTDs_ref = self.normalize_ctds(self.CTDs_ref, self.Vol_ref)
@@ -141,7 +150,7 @@ class graphs_distance:
         if self.verbose: 
             print('Calulating the SAGD between:')
             print(f' G({self.ref}) and G(~), as an average  ' \
-                  f'of the SAGD between G({self.ref}) and the {self.N_replicates}')
+                  f'of the SAGD between G({self.ref}) and the {self.N_replicates} replicates')
         self.rep_SAGD = {}
         self.time = []
         self.CTDs_dic = {}
@@ -163,3 +172,61 @@ class graphs_distance:
         tac = time.time()
         if self.verbose:
             print(f'Process took {(tac-tic)/60}') 
+            
+    def compute_asymp_SAGD(self):
+        self.CTDs_asymp_ref = list(self.C_asymp_ref[np.triu_indices(self.N_ref, k = 1)])
+        self.NormCTDs_asymp_ref = self.normalize_ctds(self.CTDs_asymp_ref, self.Vol_ref)
+        tic = time.time()
+        if self.verbose: 
+            print('Calulating the asymptotic SAGD between:')
+            print(f' G({self.ref}) and G(~), as an average  ' \
+                  f'of the SAGD between G({self.ref}) and the {self.N_replicates} replicates')
+        self.rep_asymp_SAGD = {}
+        self.time = []
+        self.CTDs_asymp_dic = {}
+        for idx, key in enumerate(self.params_list):
+            tic_ = time.time() 
+            replicate_distance = []
+            ctds_temp = {}
+            for rep in range(self.N_replicates):
+                C_j  = self.C_asymp_dic[key][rep]
+                CTDs_j = list(C_j[np.triu_indices(C_j.shape[0], k = 1)])
+                NormCTDs_j = self.normalize_ctds(CTDs_j, np.sum(self.W_dic[key][rep]))
+                ctds_temp[rep] = NormCTDs_j
+                replicate_distance.append(self.Kruglov_distance(self.NormCTDs_asymp_ref, NormCTDs_j))
+            self.CTDs_asymp_dic[key] = ctds_temp
+            self.rep_asymp_SAGD[key] = replicate_distance
+            tac_ = time.time()
+            time_ = (tac_ - tic_) / 60
+            self.time.append(time_)
+        tac = time.time()
+        if self.verbose:
+            print(f'Process took {(tac-tic)/60}')
+    
+    def ASD(self, eigv_i, eigv_j):
+        return np.sqrt(np.sum((eigv_i - eigv_j)**2))
+    
+    def compute_ASD(self):
+        tic = time.time()
+        self.rep_ASD = {}
+        self.time = []
+        if self.verbose: 
+            print('Calulating the ASD between:')
+            print(f' G({self.ref}) and G(~), as an average  ' \
+                  f'of the ASD between G({self.ref}) and the {self.N_replicates} replicates')
+        for idx, key in enumerate(self.params_list):
+            tic_ = time.time() 
+            replicate_distance = []
+            for rep in range(self.N_replicates):
+                replicate_distance.append(self.ASD(np.asarray(self.eigvs_ref),
+                                                   np.asarray(self.Eval_dic[key][rep])))
+            self.rep_ASD[key] = replicate_distance
+            tac_ = time.time()
+            time_ = (tac_ - tic_) / 60
+            self.time.append(time_)
+        tac = time.time()
+        if self.verbose:
+            print(f'Process took {(tac-tic)/60} minutes') 
+    
+    
+    

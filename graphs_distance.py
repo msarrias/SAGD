@@ -10,6 +10,8 @@ class graphs_distance:
     def __init__(self, ref, W_ref, W_dic, norm_type = "scale_and_shift", verbose = True):
         self.ref = ref
         self.W_ref = W_ref
+        self.D_ref = self.compute_D(self.W_ref)
+        self.L_ref = self.D_ref - self.W_ref
         self.W_dic = W_dic
         self.norm_type = norm_type
         self.verbose = verbose
@@ -22,6 +24,8 @@ class graphs_distance:
     
     def reset_W_ref(self, new_ref, new_W_ref):
         self.W_ref = new_W_ref
+        self.D_ref = self.compute_D(self.W_ref)
+        self.L_ref = self.D_ref - self.W_ref
         self.ref = new_ref
         self.compute_CTDs_ref()
         self.compute_asymp_CTDs_ref()
@@ -56,26 +60,27 @@ class graphs_distance:
                 C[xj, xi] = C[xi, xj]
         return C
     
-    def solve_and_sort_std_eigenvalue_problem(self, matrix):
+    def solve_and_sort_std_eigv_problem(self, matrix):
         eigv, eigvc = la.eig(matrix)
         sorted_eig =  sorted(zip(eigv.real, eigvc.T), key=lambda x: x[0])
         return [[elm[i] for elm in sorted_eig] for i in [0,1]]
     
+    def solve_and_sort_gen_eigv_problem_eigv_only(self, matrix_A, matrix_B):
+        eigv = la.eigvals(matrix_A, matrix_B)
+        return sorted([eig.real for eig in eigv])
+    
     def compute_CTDs_ref(self):
-        self.D_ref = self.compute_D(self.W_ref)
-        self.L_ref = self.D_ref - self.W_ref
         self.Vol_ref = np.sum(self.D_ref)
-        self.eigvs_ref, self.eigvec_ref = self.solve_and_sort_std_eigenvalue_problem(self.L_ref)
+        self.eigvs_ref, self.eigvec_ref = self.solve_and_sort_std_eigv_problem(self.L_ref)
         self.C_ref = self.compute_C_matrix(self.eigvs_ref, self.eigvec_ref, np.sqrt(self.Vol_ref))
         if self.verbose:
             print(f'Reference model CTD matrix completed')
             
     def compute_asymp_CTDs_ref(self):
-        self.D_ref = self.compute_D(self.W_ref)
         self.Vol_ref = np.sum(self.D_ref)
         self.C_asymp_ref = self.compute_asymp_C_matrix(self.D_ref)
         if self.verbose:
-            print(f'Asymptotic rerence model CTD matrix completed')
+            print(f'Asymptotic reference model CTD matrix completed')
             
     def compute_asymp_CTDs_dic(self):
         self.C_asymp_dic = {}
@@ -105,7 +110,7 @@ class graphs_distance:
             for replicate in range(self.N_replicates):
                 W_temp = self.W_dic[parm][replicate]
                 D_temp = self.compute_D(W_temp)
-                eigv, eigvc = self.solve_and_sort_std_eigenvalue_problem(D_temp - W_temp)
+                eigv, eigvc = self.solve_and_sort_std_eigv_problem(D_temp - W_temp)
                 Eval_dic_temp[replicate] = eigv
                 C_dic_temp[replicate] = self.compute_C_matrix(eigv, eigvc, np.sqrt(np.sum(D_temp)))
             self.C_dic[parm] = C_dic_temp
@@ -203,24 +208,34 @@ class graphs_distance:
         if self.verbose:
             print(f'Process took {(tac-tic)/60}')
     
-    def ASD(self, eigv_i, eigv_j):
+    def NLSD(self, eigv_i, eigv_j):
         return np.sqrt(np.sum((eigv_i - eigv_j)**2))
     
-    def compute_ASD(self):
+    def compute_NLSD(self):
         tic = time.time()
-        self.rep_ASD = {}
+        self.rep_NLSD = {}
         self.time = []
+        self.norm_eigvs_ref = self.solve_and_sort_gen_eigv_problem_eigv_only(self.L_ref, self.D_ref)
+        self.UnnormLEval_dic = {}
+        for parm in self.params_list:
+            C_dic_temp = {}
+            Eval_dic_temp = {}
+            for replicate in range(self.N_replicates):
+                W_temp = self.W_dic[parm][replicate]
+                D_temp = self.compute_D(W_temp)
+                Eval_dic_temp[replicate] = self.solve_and_sort_gen_eigv_problem_eigv_only(D_temp - W_temp, D_temp)
+            self.UnnormLEval_dic[parm] = Eval_dic_temp
         if self.verbose: 
-            print('Calulating the ASD between:')
+            print('Calulating the Unnormalized Laplacian Spectral distance between:')
             print(f' G({self.ref}) and G(~), as an average  ' \
-                  f'of the ASD between G({self.ref}) and the {self.N_replicates} replicates')
+                  f'of the NLSD between G({self.ref}) and the {self.N_replicates} replicates')
         for idx, key in enumerate(self.params_list):
             tic_ = time.time() 
             replicate_distance = []
             for rep in range(self.N_replicates):
-                replicate_distance.append(self.ASD(np.asarray(self.eigvs_ref),
-                                                   np.asarray(self.Eval_dic[key][rep])))
-            self.rep_ASD[key] = replicate_distance
+                replicate_distance.append(self.NLSD(np.asarray(self.norm_eigvs_ref ),
+                                                   np.asarray(self.UnnormLEval_dic[key][rep])))
+            self.rep_NLSD[key] = replicate_distance
             tac_ = time.time()
             time_ = (tac_ - tic_) / 60
             self.time.append(time_)

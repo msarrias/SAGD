@@ -22,12 +22,12 @@ def plot_avg_graph_dist(ref_par_list, par_list, avg_dic,
         plt.subplot(1, 5, i+1)
         plt.tight_layout()
         if par == 'p':
-            plt.title(r'$p_0$ = ' + str(par0))
-            plt.xlabel('p')
+            plt.title(r'$p_0$ = ' + str(par0), fontsize = 15)
+            plt.xlabel('p', fontsize = 15)
         else:
-            plt.title(r'$k_0$ = ' + str(par0))
-            plt.xlabel('k')
-        plt.ylabel(distance)
+            plt.title(r'$k_0$ = ' + str(par0), fontsize = 15)
+            plt.xlabel('k', fontsize = 15)
+        plt.ylabel(distance, fontsize = 15)
         plt.plot(par_list, avg_dic[par0], '-o', color = 'red')
         plt.plot(par_list[np.argmin(avg_dic[par0])], 
                  np.min(avg_dic[par0]), 'x', color = 'blue')
@@ -38,5 +38,6 @@ def plot_avg_graph_dist(ref_par_list, par_list, avg_dic,
                     for i in range(len(par_list))]
         plt.fill_between(par_list, minus_std, plus_std,
                          color = 'lightgrey')
-    if save_fig_list[1] != 'none':
-        plt.savefig(save_fig_list[0])
+        plt.tick_params(labelsize=15)
+    if save_fig_list != 'none':
+        plt.savefig(save_fig_list)

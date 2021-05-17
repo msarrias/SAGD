@@ -2,9 +2,8 @@ import numpy as np
 import scipy.linalg as la
 from numpy.linalg import eigh
 from collections import Counter
-from matplotlib import pyplot as plt
 import math, random, time
-import networkx as nx
+from Queue import *
 
 class graphs_distance:
     def __init__(self, ref, W_ref, W_dic, norm_type = "scale_and_shift", verbose = True):
@@ -47,16 +46,17 @@ class graphs_distance:
         C = np.zeros((N,N))
         for xi in range(N):
             for xj in range(xi, N):
-                C[xi, xj] = np.sqrt(sum((CTE[xi] -  CTE[xj])**2)) 
+                C[xi, xj] = sum((CTE[xi] -  CTE[xj])**2)
                 C[xj, xi] = C[xi, xj]
         return C
     
     def compute_asymp_C_matrix(self, D_matrix):
         N, _ = D_matrix.shape
+        Vol = np.sum(D_matrix)
         C = np.zeros((N, N))
         for xi in range(N):
             for xj in range(xi, N):
-                C[xi, xj] = np.sum(D_matrix) * ((1/ D_matrix[xi, xi]) + (1/ D_matrix[xj, xj]))
+                C[xi, xj] =  Vol * ((1/ D_matrix[xi, xi]) + (1/ D_matrix[xj, xj]))
                 C[xj, xi] = C[xi, xj]
         return C
     
@@ -208,8 +208,26 @@ class graphs_distance:
         if self.verbose:
             print(f'Process took {(tac-tic)/60}')
     
+    def nodes_geodesic_distance_matrix(self, W):
+        N, _ = W.shape
+        geodesic_dist_matrix = np.zeros(W.shape)
+        for node in range(N):
+            path_lengths = {n : -1 for n in range(N)} 
+            queue = Queue()
+            queue.append(node)
+            path_lengths[node] = 0
+            while not queue.is_empty():
+                current_node = queue.pop()
+                for w in [i[0] for i in np.argwhere(W[current_node]>0)]:
+                    if path_lengths[w] == -1:
+                        queue.append(w)
+                        path_lengths[w] = path_lengths[current_node] + 1
+            geodesic_dist_matrix[node] = np.asarray(list(path_lengths.values()))
+        return geodesic_dist_matrix
+
     def NLSD(self, eigv_i, eigv_j):
         return np.sqrt(np.sum((eigv_i - eigv_j)**2))
+    
     
     def compute_NLSD(self):
         tic = time.time()

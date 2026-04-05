@@ -15,7 +15,7 @@ def normalize(list_values, norm_type, Vol=None):
         if arr_mean == 0:
             raise ValueError("Mean of input values must be non-zero for 'norm_wrt_avg_ctd'")
         return arr / np.mean(arr)
-    return arr
+    raise ValueError("Unsupported norm_type")
 
 
 def Kruglov_distance(vi, vj):

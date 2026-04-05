@@ -11,7 +11,7 @@ def SAGD(W_i, W_j, laplacian_type="unnormalized", norm_type="norm_wrt_avg_ctd"):
     norm_i = normalize(list_values=triu_i, norm_type=norm_type, Vol=np.sum(W_i))
 
     # Process Graph j
-    C_Gj = CTD_matrix(W=W_j laplacian_type=laplacian_type)
+    C_Gj = CTD_matrix(W=W_j, laplacian_type=laplacian_type)
     triu_j = C_Gj[np.triu_indices(W_j.shape[0], k=1)]
     norm_j = normalize(list_values=triu_j, norm_type=norm_type, Vol=np.sum(W_j))
     

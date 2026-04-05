@@ -8,8 +8,12 @@ def normalize(list_values, norm_type, Vol=None):
         v_min, v_max = arr.min(), arr.max()
         return (arr - v_min) / (v_max - v_min) if v_max != v_min else arr
     if norm_type == "norm_wrt_volume":
+        if Vol is None or Vol == 0:
+            raise ValueError("Vol must be provided and non-zero for 'norm_wrt_volume'")
         return arr / Vol
     if norm_type == "norm_wrt_avg_ctd":
+        if arr_mean == 0:
+            raise ValueError("Mean of input values must be non-zero for 'norm_wrt_avg_ctd'")
         return arr / np.mean(arr)
     return arr
 

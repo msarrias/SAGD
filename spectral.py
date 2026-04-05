@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.linalg as la
-from collections import Counter
 
 
 def unnormalized_Laplacian(W):

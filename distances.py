@@ -5,7 +5,6 @@ from spectral import solve_and_sort_std_eigv_problem, normalized_Laplacian, unno
 def CTD_matrix(W, laplacian_type="normalized"):
     """Calculates the Commute Time Distance (CTD) matrix."""
     d = np.sum(W, axis=1)
-    D = np.diag(d)
     Vol = np.sum(d)
 
     if laplacian_type not in ("normalized", "unnormalized"):

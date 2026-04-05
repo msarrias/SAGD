@@ -12,9 +12,10 @@ def normalize(list_values, norm_type, Vol=None):
             raise ValueError("Vol must be provided and non-zero for 'norm_wrt_volume'")
         return arr / Vol
     if norm_type == "norm_wrt_avg_ctd":
+        arr_mean = np.mean(arr)
         if arr_mean == 0:
             raise ValueError("Mean of input values must be non-zero for 'norm_wrt_avg_ctd'")
-        return arr / np.mean(arr)
+        return arr / arr_mean
     raise ValueError("Unsupported norm_type")
 
 

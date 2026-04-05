@@ -12,7 +12,7 @@ def CTD_matrix(W, laplacian_type="normalized"):
         L = normalized_Laplacian(W)
 
     elif laplacian_type == "unnormalized":
-        L = unormalized_Laplacian(W)
+        L = unnormalized_Laplacian(W)
         
     # Solve Eigen-problem
     eigvs, eigvecs = solve_and_sort_std_eigv_problem(L)

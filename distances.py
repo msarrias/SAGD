@@ -16,8 +16,8 @@ def CTD_matrix(W, laplacian_type="normalized"):
         
     # Solve Eigen-problem
     eigvs, eigvecs = solve_and_sort_std_eigv_problem(L)
-    if eigvs[1] < 1e-10:
-        num_components = np.sum(eigvs < 1e-10)
+
+    if np.sum(eigvs < 1e-10) > 1:
         raise ValueError(
             "Graph is disconnected - CTD requires a single connected component."
         )

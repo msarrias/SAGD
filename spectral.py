@@ -10,7 +10,7 @@ def unnormalized_Laplacian(W):
 
 def normalized_Laplacian(W):
     d = np.sum(W, axis=1)
-    d_inv_sqrt = 1.0 / np.sqrt(d + 1e-12)
+    d_inv_sqrt = 1.0 / np.sqrt(d)
     D_inv_sqrt = np.diag(d_inv_sqrt) 
     #L_sym = I - D^(-1/2) W D^(-1/2)
     return np.eye(len(W)) - D_inv_sqrt @ W @ D_inv_sqrt

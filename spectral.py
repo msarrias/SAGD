@@ -3,12 +3,12 @@ import scipy.linalg as la
 from collections import Counter
 
 
-def normalized_Laplacian(W):
+def unnormalized_Laplacian(W):
     D = np.diag(np.sum(W, axis=1))
     return D - W
 
 
-def unormalized_Laplacian(W):
+def normalized_Laplacian(W):
     d = np.sum(W, axis=1)
     d_inv_sqrt = 1.0 / np.sqrt(d + 1e-12)
     D_inv_sqrt = np.diag(d_inv_sqrt) 

@@ -1,5 +1,6 @@
 import numpy as np
 from collections import Counter
+from scipy.stats import rankdata
 
 
 def normalize(list_values, norm_type, Vol=None):
@@ -16,6 +17,8 @@ def normalize(list_values, norm_type, Vol=None):
         if arr_mean == 0:
             raise ValueError("Mean of input values must be non-zero for 'norm_wrt_avg_ctd'")
         return arr / arr_mean
+    if norm_type == "rank_norm":
+        return rankdata(arr) / len(arr)
     raise ValueError("Unsupported norm_type")
 
 

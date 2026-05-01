@@ -48,7 +48,7 @@ def CTD_matrix(
     sq_norms = np.sum(CTE**2, axis=1)
     C = sq_norms[:, np.newaxis] + sq_norms[np.newaxis, :] - 2 * np.dot(CTE, CTE.T)
 
-    return C
+    return C, vals
 
 
 def asymp_CTD_matrix(W):

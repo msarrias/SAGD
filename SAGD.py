@@ -11,7 +11,7 @@ def SAGD(
 ):
     """Compute Shape-Aware Graph Distance."""
     # Process Graph i
-    C_Gi = CTD_matrix(W=W_i, laplacian_type=laplacian_type)
+    C_Gi, _ = CTD_matrix(W=W_i, laplacian_type=laplacian_type)
     triu_i = C_Gi[np.triu_indices(W_i.shape[0], k=1)]
     # Assuming volume-based norm uses total weight sum
     norm_i = normalize(
@@ -21,7 +21,7 @@ def SAGD(
     )
 
     # Process Graph j
-    C_Gj = CTD_matrix(W=W_j, laplacian_type=laplacian_type)
+    C_Gj, _ = CTD_matrix(W=W_j, laplacian_type=laplacian_type)
     triu_j = C_Gj[np.triu_indices(W_j.shape[0], k=1)]
     norm_j = normalize(
         list_values=triu_j,

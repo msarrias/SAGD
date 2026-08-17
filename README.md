@@ -1,7 +1,5 @@
 # Shape-Aware Graph Distance
 ## Installation
-You can install the SAGD package locally in "editable" mode. This allows you to use the library while making changes to the source code without needing to re-install.
-
 ### Clone the repository
 
 ```
